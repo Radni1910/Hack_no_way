@@ -1,19 +1,60 @@
+// Assuming you already have your Firebase initialization imports
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCvviVDDmhtczlcQwLIDUq2iwdmZ4jC6CI",
-  authDomain: "hackathon-b5cd5.firebaseapp.com",
-  projectId: "hackathon-b5cd5",
-  storageBucket: "hackathon-b5cd5.firebasestorage.app",
-  messagingSenderId: "824418926341",
-  appId: "1:824418926341:web:9ec5eb9562daa2a49f016c",
-  measurementId: "G-Y8B309ZF0L"
+// --- Global Config Variables (Canvas Environment) ---
+const firebaseConfig =
+  typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : {};
+
+// Initialize Firebase App and Services
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+
+// --- Authentication Functions ---
+
+/**
+ * Signs in a user with email and password.
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<UserCredential>}
+ */
+export const signInUser = async (email, password) => {
+  return signInWithEmailAndPassword(auth, email, password);
 };
 
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+/**
+ * Creates a new user with email and password.
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<UserCredential>}
+ */
+export const signUpUser = async (email, password) => {
+  return createUserWithEmailAndPassword(auth, email, password);
+};
+
+/**
+ * Signs out the current user.
+ * @returns {Promise<void>}
+ */
+export const signOutUser = () => {
+  return signOut(auth);
+};
+
+/**
+ * Sets up a listener for authentication state changes.
+ * @param {function} callback - Function called with the current user object (or null).
+ */
+export const subscribeToAuthChanges = (callback) => {
+  return onAuthStateChanged(auth, callback);
+};
+
+// You can now import these functions into any component like this:
+// import { signInUser, signUpUser, signOutUser } from './firebase.js';

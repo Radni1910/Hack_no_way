@@ -1,6 +1,6 @@
 // src/App.jsx
-import ProfilePage from "./pages/ProfilePage";
+import LoginPage from "./pages/Login.jsx";
 
 export default function App() {
-  return <ProfilePage />;
+  return <LoginPage />;
 }
