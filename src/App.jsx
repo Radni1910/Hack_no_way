@@ -1,12 +1,6 @@
-import { Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
-import Home from "./pages/Home";
+// src/App.jsx
+import ProfilePage from "./pages/ProfilePage";
 
 export default function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/home" element={<Home />} />
-    </Routes>
-  );
+  return <ProfilePage />;
 }

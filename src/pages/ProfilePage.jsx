@@ -1,0 +1,476 @@
+import { useState, useCallback } from "react";
+
+// Inline SVG Icons for aesthetics
+const GitHubIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.2-.2-2.32-.58-3.4a.12.12 0 0 0-.08-.09c-.45-.16-1.5-.4-3-1.4.37-.94.75-2.67.26-4.24-.52-1.76-2.61-3.08-4.73-3.1-2.12.02-4.21 1.34-4.73 3.1-.49 1.57-.11 3.3.26 4.24-1.5.76-2.55 1.05-3 1.4-.08.02-.15.06-.08.09-.38 1.08-.46 2.19-.38 3.4 0 3.5 3 5.5 6 5.5-1 0-2 0-3.5 1V22" />
+  </svg>
+);
+const LinkedInIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect width="4" height="12" x="2" y="9" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
+const LinkIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.74 1.74" />
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.74-1.74" />
+  </svg>
+);
+const PencilIcon = (props) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+    <path d="m15 5 4 4" />
+  </svg>
+);
+
+// Helper Component for Skills/Interests
+const Chip = ({ text }) => (
+  <span className="inline-block bg-indigo-100 text-indigo-700 text-sm font-medium px-3 py-1 rounded-full shadow-sm">
+    {text}
+  </span>
+);
+
+// Helper Component for Projects
+const ProjectCard = ({ title, description }) => (
+  <div className="p-4 border border-gray-200 rounded-xl bg-white transition duration-300 hover:shadow-md">
+    <h4 className="text-lg font-semibold text-gray-900 mb-1">{title}</h4>
+    <p className="text-gray-600 text-sm">{description}</p>
+  </div>
+);
+
+// Helper Component for Form Inputs
+const FormField = ({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  required = false,
+}) => (
+  <div>
+    <label
+      htmlFor={id}
+      className="block text-sm font-medium text-gray-700 mb-1"
+    >
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    <input
+      type={type}
+      id={id}
+      name={id}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      required={required}
+      className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white transition duration-150"
+    />
+  </div>
+);
+
+// Main Application Component
+export default function App() {
+  const defaultProfile = {
+    name: "Kai Lawson",
+    college: "State University of Technology",
+    branch: "Computer Science",
+    year: "3rd Year",
+    skills: ["React", "TypeScript", "Tailwind CSS", "Node.js", "Firebase"],
+    interests: ["Open Source", "Gaming", "Data Visualization"],
+    links: {
+      github: "https://github.com/kai-dev",
+      linkedin: "https://linkedin.com/in/kai-lawson",
+      portfolio: "https://kailawson.dev",
+    },
+    projects: [
+      {
+        title: "Real-time Chat App",
+        description:
+          "Built a full-stack chat application using React and Firestore.",
+      },
+      {
+        title: "Visualization Engine",
+        description:
+          "Developed a D3-based engine for rendering dynamic financial data.",
+      },
+    ],
+  };
+
+  const [profile, setProfile] = useState(defaultProfile);
+  const [draftProfile, setDraftProfile] = useState(defaultProfile);
+  const [isEditing, setIsEditing] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  const handleEditChange = useCallback((e) => {
+    const { name, value } = e.target;
+    if (name === "skills" || name === "interests") {
+      // Convert comma-separated string to array
+      setDraftProfile((prev) => ({
+        ...prev,
+        [name]: value
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0),
+      }));
+    } else if (name in draftProfile.links) {
+      setDraftProfile((prev) => ({
+        ...prev,
+        links: { ...prev.links, [name]: value },
+      }));
+    } else {
+      setDraftProfile((prev) => ({ ...prev, [name]: value }));
+    }
+  }, []);
+
+  const isValidUrl = (string) => {
+    try {
+      return new URL(string).protocol.includes("http");
+    } catch (e) {
+      return string === ""; // Allow empty string
+    }
+  };
+
+  const handleSave = () => {
+    // Simple form validation
+    if (!draftProfile.name || !draftProfile.college || !draftProfile.branch) {
+      setMessage({
+        type: "error",
+        text: "Name, College, and Branch are required fields.",
+      });
+      return;
+    }
+
+    if (
+      !isValidUrl(draftProfile.links.github) ||
+      !isValidUrl(draftProfile.links.linkedin) ||
+      !isValidUrl(draftProfile.links.portfolio)
+    ) {
+      setMessage({
+        type: "error",
+        text: "Please ensure all professional links are valid URLs.",
+      });
+      return;
+    }
+
+    // In a real app, you would save draftProfile to Firestore here.
+    // For now, we simulate success and update the main state.
+    setProfile(draftProfile);
+    setIsEditing(false);
+    setMessage({ type: "success", text: "Profile saved successfully!" });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handleCancel = () => {
+    // Reset the draft profile to the current saved profile
+    setDraftProfile(profile);
+    setIsEditing(false);
+    setMessage(null);
+  };
+
+  const renderLink = (name, url, Icon) => {
+    if (!url) return null;
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center space-x-2 px-4 py-2 border border-indigo-200 rounded-xl text-indigo-600 font-medium hover:bg-indigo-50 transition duration-200 shadow-sm w-full md:w-auto justify-center"
+      >
+        <Icon className="w-5 h-5" />
+        <span>{name}</span>
+      </a>
+    );
+  };
+
+  // --- RENDER DISPLAY MODE ---
+  if (!isEditing) {
+    return (
+      <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-gray-50">
+        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 border border-gray-100">
+          <div className="flex justify-between items-start mb-8 border-b pb-6">
+            {/* Title and Edit Button */}
+            <div>
+              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
+                {profile.name}
+              </h1>
+              <p className="text-xl text-indigo-600 mt-2">{profile.college}</p>
+              <p className="text-lg text-gray-500">
+                {profile.branch}, {profile.year}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setDraftProfile(profile); // Initialize draft
+                setIsEditing(true);
+                setMessage(null);
+              }}
+              className="flex items-center space-x-2 px-5 py-2 mt-2 bg-indigo-600 text-white text-base font-medium rounded-xl hover:bg-indigo-700 transition duration-150 shadow-lg"
+            >
+              <PencilIcon />
+              <span>Edit Profile</span>
+            </button>
+          </div>
+
+          {message && (
+            <div
+              className={`p-3 mb-6 rounded-lg text-center font-medium ${
+                message.type === "error"
+                  ? "bg-red-100 text-red-800"
+                  : "bg-green-100 text-green-800"
+              }`}
+            >
+              {message.text}
+            </div>
+          )}
+
+          {/* Links Section */}
+          <div className="mb-10">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Connect</h3>
+            <div className="flex flex-wrap gap-4">
+              {renderLink("GitHub", profile.links.github, GitHubIcon)}
+              {renderLink("LinkedIn", profile.links.linkedin, LinkedInIcon)}
+              {renderLink("Portfolio", profile.links.portfolio, LinkIcon)}
+            </div>
+          </div>
+
+          {/* Skills Section */}
+          <div className="mb-10">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Skills & Expertise
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {profile.skills.map((skill, index) => (
+                <Chip key={index} text={skill} />
+              ))}
+            </div>
+          </div>
+
+          {/* Interests Section */}
+          <div className="mb-10">
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Interests
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {profile.interests.map((interest, index) => (
+                <Chip key={index} text={interest} />
+              ))}
+            </div>
+          </div>
+
+          {/* Projects Section */}
+          <div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Past Projects
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {profile.projects.map((project, index) => (
+                <ProjectCard
+                  key={index}
+                  title={project.title}
+                  description={project.description}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER EDIT MODE ---
+  return (
+    <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-gray-50">
+      <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 border border-gray-100">
+        <h2 className="text-3xl font-extrabold text-indigo-600 mb-8">
+          Edit Profile Details
+        </h2>
+
+        {message && (
+          <div
+            className={`p-3 mb-6 rounded-lg text-center font-medium ${
+              message.type === "error"
+                ? "bg-red-100 text-red-800"
+                : "bg-green-100 text-green-800"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+
+        <div className="space-y-8">
+          {/* Basic Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b pb-6">
+            <FormField
+              id="name"
+              label="Full Name"
+              value={draftProfile.name}
+              onChange={handleEditChange}
+              placeholder="e.g., Jane Doe"
+              required
+            />
+            <FormField
+              id="college"
+              label="College/University"
+              value={draftProfile.college}
+              onChange={handleEditChange}
+              placeholder="e.g., State University of Technology"
+              required
+            />
+            <FormField
+              id="branch"
+              label="Branch/Major"
+              value={draftProfile.branch}
+              onChange={handleEditChange}
+              placeholder="e.g., Electrical Engineering"
+              required
+            />
+            <FormField
+              id="year"
+              label="Year/Status"
+              value={draftProfile.year}
+              onChange={handleEditChange}
+              placeholder="e.g., 3rd Year"
+              required
+            />
+          </div>
+
+          {/* Skills and Interests (Textarea for easy editing) */}
+          <div className="border-b pb-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Skills & Interests
+            </h3>
+            <div className="space-y-6">
+              <label
+                htmlFor="skills-edit"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Skills (Comma separated)
+              </label>
+              <textarea
+                id="skills-edit"
+                name="skills"
+                rows="3"
+                value={draftProfile.skills.join(", ")}
+                onChange={handleEditChange}
+                placeholder="JavaScript, React, Firebase, Python"
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              ></textarea>
+
+              <label
+                htmlFor="interests-edit"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Interests (Comma separated)
+              </label>
+              <textarea
+                id="interests-edit"
+                name="interests"
+                rows="3"
+                value={draftProfile.interests.join(", ")}
+                onChange={handleEditChange}
+                placeholder="Robotics, Reading, Open Source"
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              ></textarea>
+            </div>
+          </div>
+
+          {/* Social Links */}
+          <div className="pb-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Professional Links
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                id="github"
+                label="GitHub URL"
+                type="url"
+                value={draftProfile.links.github}
+                onChange={handleEditChange}
+                placeholder="https://github.com/your-username"
+              />
+              <FormField
+                id="linkedin"
+                label="LinkedIn URL"
+                type="url"
+                value={draftProfile.links.linkedin}
+                onChange={handleEditChange}
+                placeholder="https://linkedin.com/in/your-username"
+              />
+              <FormField
+                id="portfolio"
+                label="Portfolio URL"
+                type="url"
+                value={draftProfile.links.portfolio}
+                onChange={handleEditChange}
+                placeholder="https://your-site.com"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-4 pt-6 mt-6 border-t">
+          <button
+            onClick={handleCancel}
+            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition duration-150 font-medium shadow-md"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition duration-150 font-medium shadow-lg"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
