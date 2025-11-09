@@ -1,6 +1,9 @@
 import { useState, useCallback } from "react";
+import { useAuth } from "../Context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { auth } from "../firebase";
 
-// Inline SVG Icons for aesthetics
+
 const GitHubIcon = (props) => (
   <svg
     {...props}
@@ -70,22 +73,22 @@ const PencilIcon = (props) => (
   </svg>
 );
 
-// Helper Component for Skills/Interests
+
 const Chip = ({ text }) => (
-  <span className="inline-block bg-indigo-100 text-indigo-700 text-sm font-medium px-3 py-1 rounded-full shadow-sm">
+  <span className="inline-block bg-indigo-700/30 text-indigo-300 text-sm font-medium px-3 py-1 rounded-full shadow-sm border border-indigo-700">
     {text}
   </span>
 );
 
-// Helper Component for Projects
+
 const ProjectCard = ({ title, description }) => (
-  <div className="p-4 border border-gray-200 rounded-xl bg-white transition duration-300 hover:shadow-md">
-    <h4 className="text-lg font-semibold text-gray-900 mb-1">{title}</h4>
-    <p className="text-gray-600 text-sm">{description}</p>
+  <div className="p-4 border border-gray-700 rounded-xl bg-gray-800 transition duration-300 hover:shadow-lg hover:shadow-indigo-900/20">
+    <h4 className="text-lg font-semibold text-white mb-1">{title}</h4>
+    <p className="text-gray-400 text-sm">{description}</p>
   </div>
 );
 
-// Helper Component for Form Inputs
+
 const FormField = ({
   id,
   label,
@@ -98,9 +101,9 @@ const FormField = ({
   <div>
     <label
       htmlFor={id}
-      className="block text-sm font-medium text-gray-700 mb-1"
+      className="block text-sm font-medium text-gray-300 mb-1"
     >
-      {label} {required && <span className="text-red-500">*</span>}
+      {label} {required && <span className="text-red-400">*</span>}
     </label>
     <input
       type={type}
@@ -110,23 +113,24 @@ const FormField = ({
       onChange={onChange}
       placeholder={placeholder}
       required={required}
-      className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white transition duration-150"
+      className="mt-1 block w-full px-4 py-2 border border-gray-700 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-gray-800 text-white transition duration-150 placeholder-gray-500"
     />
   </div>
 );
 
-// Main Application Component
 export default function App() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const defaultProfile = {
-    name: "Kai Lawson",
-    college: "State University of Technology",
+    name: "Prakriti Ranjan",
+    college: "GEC",
     branch: "Computer Science",
-    year: "3rd Year",
+    year: "2nd Year",
     skills: ["React", "TypeScript", "Tailwind CSS", "Node.js", "Firebase"],
     interests: ["Open Source", "Gaming", "Data Visualization"],
     links: {
-      github: "https://github.com/kai-dev",
-      linkedin: "https://linkedin.com/in/kai-lawson",
+      github: "https://github.com/Radni1910",
+      linkedin: "https://linkedin.com/in/Radni-Amonkar",
       portfolio: "https://kailawson.dev",
     },
     projects: [
@@ -148,37 +152,43 @@ export default function App() {
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(null);
 
-  const handleEditChange = useCallback((e) => {
-    const { name, value } = e.target;
-    if (name === "skills" || name === "interests") {
-      // Convert comma-separated string to array
-      setDraftProfile((prev) => ({
-        ...prev,
-        [name]: value
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0),
-      }));
-    } else if (name in draftProfile.links) {
-      setDraftProfile((prev) => ({
-        ...prev,
-        links: { ...prev.links, [name]: value },
-      }));
-    } else {
-      setDraftProfile((prev) => ({ ...prev, [name]: value }));
-    }
-  }, []);
+  const handleEditChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      if (name === "skills" || name === "interests") {
+        // Convert comma-separated string to array
+        setDraftProfile((prev) => ({
+          ...prev,
+          [name]: value
+            .split(",")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0),
+        }));
+      } else if (name in draftProfile.links) {
+        setDraftProfile((prev) => ({
+          ...prev,
+          links: { ...prev.links, [name]: value },
+        }));
+      } else {
+        setDraftProfile((prev) => ({ ...prev, [name]: value }));
+      }
+    },
+    [draftProfile.links]
+  );
 
   const isValidUrl = (string) => {
     try {
-      return new URL(string).protocol.includes("http");
+     
+      const url = new URL(string);
+      return url.protocol.startsWith("http");
     } catch (e) {
-      return string === ""; // Allow empty string
+      
+      return string === "";
     }
   };
 
   const handleSave = () => {
-    // Simple form validation
+   
     if (!draftProfile.name || !draftProfile.college || !draftProfile.branch) {
       setMessage({
         type: "error",
@@ -194,13 +204,12 @@ export default function App() {
     ) {
       setMessage({
         type: "error",
-        text: "Please ensure all professional links are valid URLs.",
+        text: "Please ensure all professional links are valid URLs (starting with http/https).",
       });
       return;
     }
 
-    // In a real app, you would save draftProfile to Firestore here.
-    // For now, we simulate success and update the main state.
+
     setProfile(draftProfile);
     setIsEditing(false);
     setMessage({ type: "success", text: "Profile saved successfully!" });
@@ -208,10 +217,24 @@ export default function App() {
   };
 
   const handleCancel = () => {
-    // Reset the draft profile to the current saved profile
+    
     setDraftProfile(profile);
     setIsEditing(false);
     setMessage(null);
+  };
+
+ 
+  const handleLogout = () => {
+  
+    console.log("User logged out.");
+    
+    setProfile(defaultProfile);
+    setDraftProfile(defaultProfile);
+    setIsEditing(false);
+    setMessage({ type: "success", text: "Logged out successfully." });
+    setTimeout(() => setMessage(null), 3000);
+    auth.signOut(); // Firebase logout
+    navigate("/"); // Go back to Landing page
   };
 
   const renderLink = (name, url, Icon) => {
@@ -221,7 +244,7 @@ export default function App() {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center space-x-2 px-4 py-2 border border-indigo-200 rounded-xl text-indigo-600 font-medium hover:bg-indigo-50 transition duration-200 shadow-sm w-full md:w-auto justify-center"
+        className="flex items-center space-x-2 px-4 py-2 border border-indigo-700 rounded-xl text-indigo-300 font-medium hover:bg-indigo-800/50 transition duration-200 shadow-md w-full md:w-auto justify-center"
       >
         <Icon className="w-5 h-5" />
         <span>{name}</span>
@@ -229,29 +252,36 @@ export default function App() {
     );
   };
 
-  // --- RENDER DISPLAY MODE ---
+
+  const messageClasses = message
+    ? message.type === "error"
+      ? "bg-red-900/30 text-red-300 border border-red-700"
+      : "bg-green-900/30 text-green-300 border border-green-700"
+    : "";
+
+
   if (!isEditing) {
     return (
-      <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-gray-50">
-        <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 border border-gray-100">
-          <div className="flex justify-between items-start mb-8 border-b pb-6">
-            {/* Title and Edit Button */}
+      <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-gray-950 font-sans">
+        <div className="bg-gray-900 rounded-2xl shadow-2xl shadow-indigo-900/20 p-6 md:p-10 border border-gray-800">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-gray-800 pb-6">
+            
             <div>
-              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
+              <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
                 {profile.name}
               </h1>
-              <p className="text-xl text-indigo-600 mt-2">{profile.college}</p>
-              <p className="text-lg text-gray-500">
+              <p className="text-xl text-indigo-400 mt-2">{profile.college}</p>
+              <p className="text-lg text-gray-400">
                 {profile.branch}, {profile.year}
               </p>
             </div>
             <button
               onClick={() => {
-                setDraftProfile(profile); // Initialize draft
+                setDraftProfile(profile); 
                 setIsEditing(true);
                 setMessage(null);
               }}
-              className="flex items-center space-x-2 px-5 py-2 mt-2 bg-indigo-600 text-white text-base font-medium rounded-xl hover:bg-indigo-700 transition duration-150 shadow-lg"
+              className="flex items-center space-x-2 px-5 py-2 mt-4 md:mt-0 bg-indigo-600 text-white text-base font-medium rounded-xl hover:bg-indigo-500 transition duration-150 shadow-lg shadow-indigo-500/30"
             >
               <PencilIcon />
               <span>Edit Profile</span>
@@ -260,11 +290,7 @@ export default function App() {
 
           {message && (
             <div
-              className={`p-3 mb-6 rounded-lg text-center font-medium ${
-                message.type === "error"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-green-100 text-green-800"
-              }`}
+              className={`p-3 mb-6 rounded-lg text-center font-medium ${messageClasses}`}
             >
               {message.text}
             </div>
@@ -272,7 +298,7 @@ export default function App() {
 
           {/* Links Section */}
           <div className="mb-10">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">Connect</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">Connect</h3>
             <div className="flex flex-wrap gap-4">
               {renderLink("GitHub", profile.links.github, GitHubIcon)}
               {renderLink("LinkedIn", profile.links.linkedin, LinkedInIcon)}
@@ -282,7 +308,7 @@ export default function App() {
 
           {/* Skills Section */}
           <div className="mb-10">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+            <h3 className="text-2xl font-bold text-white mb-4 border-b border-gray-800 pb-2">
               Skills & Expertise
             </h3>
             <div className="flex flex-wrap gap-3">
@@ -294,7 +320,7 @@ export default function App() {
 
           {/* Interests Section */}
           <div className="mb-10">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+            <h3 className="text-2xl font-bold text-white mb-4 border-b border-gray-800 pb-2">
               Interests
             </h3>
             <div className="flex flex-wrap gap-3">
@@ -306,7 +332,7 @@ export default function App() {
 
           {/* Projects Section */}
           <div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
+            <h3 className="text-2xl font-bold text-white mb-4 border-b border-gray-800 pb-2">
               Past Projects
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -320,25 +346,31 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        {/* LOGOUT BUTTON - Centered at the bottom */}
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={handleLogout}
+            className="px-8 py-3 bg-red-700 text-white rounded-xl hover:bg-red-600 transition duration-150 font-medium shadow-lg shadow-red-700/30"
+          >
+            Sign Out / Logout
+          </button>
+        </div>
       </div>
     );
   }
 
   // --- RENDER EDIT MODE ---
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 border border-gray-100">
-        <h2 className="text-3xl font-extrabold text-indigo-600 mb-8">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto min-h-screen bg-gray-950 font-sans">
+      <div className="bg-gray-900 rounded-2xl shadow-2xl shadow-indigo-900/20 p-6 md:p-10 border border-gray-800">
+        <h2 className="text-3xl font-extrabold text-indigo-400 mb-8">
           Edit Profile Details
         </h2>
 
         {message && (
           <div
-            className={`p-3 mb-6 rounded-lg text-center font-medium ${
-              message.type === "error"
-                ? "bg-red-100 text-red-800"
-                : "bg-green-100 text-green-800"
-            }`}
+            className={`p-3 mb-6 rounded-lg text-center font-medium ${messageClasses}`}
           >
             {message.text}
           </div>
@@ -346,7 +378,7 @@ export default function App() {
 
         <div className="space-y-8">
           {/* Basic Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-gray-800 pb-6">
             <FormField
               id="name"
               label="Full Name"
@@ -382,14 +414,14 @@ export default function App() {
           </div>
 
           {/* Skills and Interests (Textarea for easy editing) */}
-          <div className="border-b pb-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+          <div className="border-b border-gray-800 pb-6">
+            <h3 className="text-xl font-semibold text-white mb-4">
               Skills & Interests
             </h3>
             <div className="space-y-6">
               <label
                 htmlFor="skills-edit"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-300 mb-1"
               >
                 Skills (Comma separated)
               </label>
@@ -400,12 +432,12 @@ export default function App() {
                 value={draftProfile.skills.join(", ")}
                 onChange={handleEditChange}
                 placeholder="JavaScript, React, Firebase, Python"
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                className="mt-1 block w-full px-4 py-2 border border-gray-700 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-gray-800 text-white placeholder-gray-500"
               ></textarea>
 
               <label
                 htmlFor="interests-edit"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-300 mb-1"
               >
                 Interests (Comma separated)
               </label>
@@ -416,14 +448,14 @@ export default function App() {
                 value={draftProfile.interests.join(", ")}
                 onChange={handleEditChange}
                 placeholder="Robotics, Reading, Open Source"
-                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                className="mt-1 block w-full px-4 py-2 border border-gray-700 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-gray-800 text-white placeholder-gray-500"
               ></textarea>
             </div>
           </div>
 
           {/* Social Links */}
           <div className="pb-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            <h3 className="text-xl font-semibold text-white mb-4">
               Professional Links
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -456,20 +488,30 @@ export default function App() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end space-x-4 pt-6 mt-6 border-t">
+        <div className="flex justify-end space-x-4 pt-6 mt-6 border-t border-gray-800">
           <button
             onClick={handleCancel}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition duration-150 font-medium shadow-md"
+            className="px-6 py-3 border border-gray-700 bg-gray-700 text-white rounded-xl hover:bg-gray-600 transition duration-150 font-medium shadow-md"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition duration-150 font-medium shadow-lg"
+            className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition duration-150 font-medium shadow-lg shadow-indigo-500/30"
           >
             Save Changes
           </button>
         </div>
+      </div>
+
+      {/* LOGOUT BUTTON - Centered at the bottom */}
+      <div className="flex justify-center mt-8">
+        <button
+          onClick={handleLogout}
+          className="px-8 py-3 bg-red-700 text-white rounded-xl hover:bg-red-600 transition duration-150 font-medium shadow-lg shadow-red-700/30"
+        >
+          Logout
+        </button>
       </div>
     </div>
   );
