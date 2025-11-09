@@ -23,4 +23,4 @@ This platform includes:
 | Tailwind CSS            | Styling                       |
 
 
-[Hackathon.zip](https://github.com/user-attachments/files/23435551/Hackathon.zip)
+https://github.com/user-attachments/assets/f296fc29-31f2-478a-b987-541c9a5f28b5
