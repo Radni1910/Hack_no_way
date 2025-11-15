@@ -9,9 +9,41 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../Context/AuthContext";
 
 const QuickProfileCard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Get user's initials for avatar
+  const getUserInitials = (name) => {
+    if (!name) return "U";
+    const names = name.split(" ");
+    const firstNameInitial = names[0] ? names[0][0] : "";
+    const lastNameInitial = names.length > 1 ? names[names.length - 1][0] : "";
+    return `${firstNameInitial}${lastNameInitial}`.toUpperCase();
+  };
+
+  // Get user's display name only (no email fallback)
+  const getUserDisplayName = () => {
+    if (user?.displayName && user.displayName.trim() !== "") {
+      return user.displayName;
+    }
+    // If no display name, try to extract name from email
+    if (user?.email) {
+      const emailName = user.email.split("@")[0];
+      // Capitalize first letter
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1);
+    }
+    return ""; // Return empty string if no name available
+  };
+
+  const displayName = getUserDisplayName();
+
+  // Only render the profile card if we have a user name
+  if (!displayName) {
+    return null; // Or return a loading state
+  }
 
   return (
     <div className="bg-gray-800 p-4 rounded-xl shadow-xl mb-6">
@@ -20,10 +52,10 @@ const QuickProfileCard = () => {
         className="flex items-center mb-4 w-full text-left hover:opacity-80 transition"
       >
         <div className="w-10 h-10 bg-indigo-500 rounded-full mr-3 flex items-center justify-center text-sm font-bold">
-          PR
+          {getUserInitials(displayName)}
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-white">Prakriti Ranjan</h3>
+          <h3 className="text-lg font-semibold text-white">{displayName}</h3>
           <p className="text-gray-400 text-xs">Information Technology</p>
         </div>
       </button>
@@ -50,7 +82,6 @@ const QuickProfileCard = () => {
     </div>
   );
 };
-
 
 const ActivityFeedItem = ({ title, time, source }) => (
   <div className="bg-gray-800 p-4 rounded-xl mb-3 border border-gray-700 hover:border-indigo-600 transition duration-150">
@@ -105,7 +136,6 @@ const NotificationItem = ({ message, isUnread }) => (
     </p>
   </div>
 );
-
 
 const Dashboard = () => {
   const [showModal, setShowModal] = useState(false);
@@ -188,7 +218,6 @@ const Dashboard = () => {
       </header>
 
       <div className="w-full lg:grid lg:grid-cols-12 lg:gap-8">
-        
         <aside className="lg:col-span-3 mb-8 lg:mb-0">
           <QuickProfileCard />
 
@@ -209,7 +238,6 @@ const Dashboard = () => {
           </div>
         </aside>
 
-        
         <main className="lg:col-span-6 mb-8 lg:mb-0">
           {/* 💡 Moved "Post New Idea" here */}
           <div className="flex justify-between items-center mb-4">

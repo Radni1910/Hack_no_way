@@ -12,19 +12,34 @@ import { auth } from "../firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  updateProfile,
 } from "firebase/auth";
 
 const signInUser = async (email, password) => {
-  return await signInWithEmailAndPassword(auth, email, password);
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    return result;
+  } catch (error) {
+    console.error("Sign in error:", error);
+    throw error;
+  }
 };
 
 const signUpUser = async (email, password) => {
-  return await createUserWithEmailAndPassword(auth, email, password);
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    return result;
+  } catch (error) {
+    console.error("Sign up error:", error);
+    throw error;
+  }
 };
 
 const LoginComponent = ({ onSignUpSuccess, onSignInSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,23 +47,55 @@ const LoginComponent = ({ onSignUpSuccess, onSignInSuccess }) => {
   const handleAuth = async (action) => {
     setError(null);
 
-    if (!email || !password) {
-      setError("Please fill out all fields.");
-      return;
+    if (action === "signup") {
+      if (!firstName || !lastName || !email || !password) {
+        setError("Please fill out all fields.");
+        return;
+      }
+    } else {
+      if (!email || !password) {
+        setError("Please fill out all fields.");
+        return;
+      }
     }
 
     setLoading(true);
 
     try {
       if (action === "signup") {
-        await signUpUser(email, password);
-        onSignUpSuccess({ email });
+        const result = await signUpUser(email, password);
+        // Update user profile with display name
+        const user = auth.currentUser;
+        if (user) {
+          await updateProfile(user, {
+            displayName: `${firstName} ${lastName}`,
+          });
+        }
+        onSignUpSuccess({ email, firstName, lastName });
       } else {
         await signInUser(email, password);
         onSignInSuccess("Login Successful!");
       }
     } catch (err) {
-      setError("Authentication Failed. Try Again.");
+      console.error("Authentication error:", err);
+      let errorMessage = "Authentication Failed. Try Again.";
+
+      // Provide more specific error messages
+      if (err.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address.";
+      } else if (err.code === "auth/user-disabled") {
+        errorMessage = "This account has been disabled.";
+      } else if (err.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email.";
+      } else if (err.code === "auth/wrong-password") {
+        errorMessage = "Incorrect password.";
+      } else if (err.code === "auth/email-already-in-use") {
+        errorMessage = "An account already exists with this email.";
+      } else if (err.code === "auth/weak-password") {
+        errorMessage = "Password should be at least 6 characters.";
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -59,6 +106,8 @@ const LoginComponent = ({ onSignUpSuccess, onSignInSuccess }) => {
     setError(null);
     setEmail("");
     setPassword("");
+    setFirstName("");
+    setLastName("");
   };
 
   const title = isSigningUp ? "Create Your Account" : "Sign In to Your Profile";
@@ -77,6 +126,38 @@ const LoginComponent = ({ onSignUpSuccess, onSignInSuccess }) => {
       )}
 
       <div className="space-y-6">
+        {isSigningUp && (
+          <>
+            {/* First Name */}
+            <div>
+              <label className="block text-lg font-medium text-gray-300">
+                First Name
+              </label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="mt-2 block w-full px-5 py-3 text-lg bg-gray-900 text-white border border-gray-700 rounded-xl 
+                focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              />
+            </div>
+
+            {/* Last Name */}
+            <div>
+              <label className="block text-lg font-medium text-gray-300">
+                Last Name
+              </label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="mt-2 block w-full px-5 py-3 text-lg bg-gray-900 text-white border border-gray-700 rounded-xl 
+                focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              />
+            </div>
+          </>
+        )}
+
         {/* Email */}
         <div>
           <label className="block text-lg font-medium text-gray-300">
@@ -88,7 +169,6 @@ const LoginComponent = ({ onSignUpSuccess, onSignInSuccess }) => {
             onChange={(e) => setEmail(e.target.value)}
             className="mt-2 block w-full px-5 py-3 text-lg bg-gray-900 text-white border border-gray-700 rounded-xl 
             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-            placeholder="you@example.com"
           />
         </div>
 
@@ -103,7 +183,6 @@ const LoginComponent = ({ onSignUpSuccess, onSignInSuccess }) => {
             onChange={(e) => setPassword(e.target.value)}
             className="mt-2 block w-full px-5 py-3 text-lg bg-gray-900 text-white border border-gray-700 rounded-xl 
             focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
-            placeholder="••••••••"
           />
         </div>
 
@@ -242,7 +321,6 @@ const Step2ProfileInfo = ({ formData, setFormData, onNext }) => {
               type="text"
               id="firstName"
               name="firstName"
-              placeholder="Radni"
               value={formData.firstName || ""}
               onChange={handleChange}
               required
@@ -260,7 +338,6 @@ const Step2ProfileInfo = ({ formData, setFormData, onNext }) => {
               type="text"
               id="lastName"
               name="lastName"
-              placeholder="Amonkar"
               value={formData.lastName || ""}
               onChange={handleChange}
               required
@@ -280,7 +357,6 @@ const Step2ProfileInfo = ({ formData, setFormData, onNext }) => {
             type="text"
             id="collegeName"
             name="collegeName"
-            placeholder="Harvard University"
             value={formData.collegeName || ""}
             onChange={handleChange}
             required
@@ -443,22 +519,19 @@ const Step4Interests = ({ formData, setFormData, onPrev, onComplete }) => {
   );
 };
 
-
 const MultiStepSignUp = ({ onSetupComplete, initialAuthData }) => {
- 
   const [currentStep, setCurrentStep] = useState(2);
-  const totalSteps = 4; 
+  const totalSteps = 4;
 
   const [formData, setFormData] = useState({
- 
     email: initialAuthData?.email || "",
     username: initialAuthData?.username || "newuser123",
-  
+
     firstName: "",
     lastName: "",
     collegeName: "",
     yearOfStudy: "",
-  
+
     skills: [],
     interests: [],
   });
@@ -501,7 +574,7 @@ const MultiStepSignUp = ({ onSetupComplete, initialAuthData }) => {
           />
         );
       default:
-        return null; 
+        return null;
     }
   };
 
@@ -510,7 +583,6 @@ const MultiStepSignUp = ({ onSetupComplete, initialAuthData }) => {
       {currentStep >= 2 && currentStep <= totalSteps && (
         <>
           <Stepper currentStep={currentStep - 1} totalSteps={totalSteps - 1} />{" "}
-          
           {renderStep()}
         </>
       )}
@@ -521,12 +593,12 @@ const MultiStepSignUp = ({ onSetupComplete, initialAuthData }) => {
 const AuthFlowApp = () => {
   const navigate = useNavigate();
 
-  const [view, setView] = useState("login"); 
+  const [view, setView] = useState("login");
   const [authData, setAuthData] = useState(null);
   const [message, setMessage] = useState(null);
 
   const handleSignUpSuccess = (data) => {
-    setAuthData(data); 
+    setAuthData(data);
     setMessage("Account created. Please complete your profile!");
     setTimeout(() => setView("multistep"), 1500);
   };

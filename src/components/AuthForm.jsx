@@ -24,17 +24,32 @@ export const AuthFormProvider = ({ children }) => {
 
   // Login User
   const login = async (email, password) => {
-    return await signInWithEmailAndPassword(auth, email, password);
+    try {
+      return await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
 
   // Register User
   const signUp = async (email, password) => {
-    return await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      return await createUserWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error("Sign up error:", error);
+      throw error;
+    }
   };
 
   // Logout User
   const logout = async () => {
-    return await signOut(auth);
+    try {
+      return await signOut(auth);
+    } catch (error) {
+      console.error("Logout error:", error);
+      throw error;
+    }
   };
 
   return (
